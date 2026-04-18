@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CEPL Leads Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0f14;
+    --surface: #161a22;
+    --surface2: #1e2330;
+    --border: #2a3042;
+    --accent: #4f9eff;
+    --accent2: #7c3aed;
+    --green: #22c55e;
+    --yellow: #f59e0b;
+    --red: #ef4444;
+    --text: #e8eaf0;
+    --muted: #8892a4;
+    --card-hover: #1f2535;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; min-height: 100vh; }
+
+  /* HEADER */
+  .header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 64px; position: sticky; top: 0; z-index: 100;
+  }
+  .logo { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800; letter-spacing: -0.5px; }
+  .logo span { color: var(--accent); }
+  .header-actions { display: flex; gap: 12px; align-items: center; }
+
+  /* SETUP PANEL */
+  .setup-panel {
+    max-width: 600px; margin: 80px auto; padding: 40px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+  }
+  .setup-panel h2 { font-family: 'Syne', sans-serif; font-size: 24px; font-weight: 700; margin-bottom: 8px; }
+  .setup-panel p { color: var(--muted); margin-bottom: 28px; line-height: 1.6; font-size: 14px; }
+  .setup-steps { counter-reset: step; display: flex; flex-direction: column; gap: 16px; margin-bottom: 28px; }
+  .step {
+    counter-increment: step;
+    display: flex; gap: 16px; align-items: flex-start;
+    padding: 16px; background: var(--surface2); border-radius: 10px; border: 1px solid var(--border);
+  }
+  .step-num {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--accent); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Syne', sans-serif; font-weight: 700; font-size: 13px; flex-shrink: 0; margin-top: 1px;
+  }
+  .step-content h4 { font-size: 14px; font-weight: 500; margin-bottom: 4px; }
+  .step-content p { font-size: 13px; color: var(--muted); margin-bottom: 0; }
+  .step-content code { background: var(--bg); padding: 2px 6px; border-radius: 4px; font-family: 'DM Mono', monospace; font-size: 12px; color: var(--accent); }
+
+  .input-group { margin-bottom: 16px; }
+  .input-group label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 8px; color: var(--muted); letter-spacing: 0.5px; text-transform: uppercase; }
+  .input-group input, .input-group select, .input-group textarea {
+    width: 100%; padding: 12px 16px;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 14px;
+    transition: border-color 0.2s;
+  }
+  .input-group input:focus, .input-group select:focus, .input-group textarea:focus {
+    outline: none; border-color: var(--accent);
+  }
+
+  .btn {
+    padding: 11px 22px; border-radius: 8px; border: none; cursor: pointer;
+    font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500;
+    transition: all 0.15s; display: inline-flex; align-items: center; gap: 8px;
+  }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: #3b8ef5; transform: translateY(-1px); }
+  .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+  .btn-secondary:hover { background: var(--border); }
+  .btn-success { background: var(--green); color: #fff; }
+  .btn-success:hover { background: #16a34a; }
+  .btn-sm { padding: 6px 14px; font-size: 13px; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
+
+  /* MAIN APP */
+  .app { display: none; }
+  .app.visible { display: block; }
+  .main { padding: 28px 32px; }
+
+  /* STATS */
+  .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+  .stat-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    padding: 20px 24px; position: relative; overflow: hidden;
+  }
+  .stat-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: var(--accent-color, var(--accent));
+  }
+  .stat-label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px; }
+  .stat-value { font-family: 'Syne', sans-serif; font-size: 32px; font-weight: 800; }
+  .stat-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+  /* TOOLBAR */
+  .toolbar {
+    display: flex; align-items: center; gap: 12px; margin-bottom: 20px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px 16px;
+    flex-wrap: wrap;
+  }
+  .search-box {
+    flex: 1; min-width: 200px; padding: 8px 14px;
+    background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
+    color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 14px;
+  }
+  .search-box:focus { outline: none; border-color: var(--accent); }
+  .filter-select {
+    padding: 8px 14px;
+    background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
+    color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 14px; cursor: pointer;
+  }
+  .filter-select:focus { outline: none; border-color: var(--accent); }
+
+  /* TABLE */
+  .table-wrap {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    overflow: hidden; overflow-x: auto;
+  }
+  table { width: 100%; border-collapse: collapse; min-width: 900px; }
+  thead tr { background: var(--surface2); border-bottom: 2px solid var(--border); }
+  th {
+    padding: 14px 16px; text-align: left;
+    font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 600;
+    color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; white-space: nowrap;
+    cursor: pointer; user-select: none;
+  }
+  th:hover { color: var(--text); }
+  td { padding: 12px 16px; font-size: 13.5px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--card-hover); }
+
+  .lead-id { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); }
+  .client-name { font-weight: 500; font-size: 14px; line-height: 1.4; }
+  .contact-name { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .task-text { font-size: 12px; color: var(--text); max-width: 220px; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+
+  .badge {
+    display: inline-block; padding: 3px 10px; border-radius: 20px;
+    font-size: 11px; font-weight: 600; white-space: nowrap;
+  }
+  .badge-in-progress { background: rgba(79,158,255,0.15); color: var(--accent); }
+  .badge-not-started { background: rgba(245,158,11,0.15); color: var(--yellow); }
+  .badge-done { background: rgba(34,197,94,0.15); color: var(--green); }
+
+  .overdue { color: var(--red); font-weight: 600; }
+  .today { color: var(--yellow); font-weight: 600; }
+  .upcoming { color: var(--green); }
+
+  .row-actions { display: flex; gap: 6px; }
+
+  /* MODAL */
+  .overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 200;
+    display: none; align-items: center; justify-content: center; padding: 24px;
+  }
+  .overlay.open { display: flex; }
+  .modal {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+    width: 100%; max-width: 700px; max-height: 90vh; overflow-y: auto;
+    padding: 32px;
+  }
+  .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; }
+  .modal-title { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 700; }
+  .close-btn { background: none; border: none; color: var(--muted); font-size: 22px; cursor: pointer; padding: 4px; line-height: 1; }
+  .close-btn:hover { color: var(--text); }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .form-full { grid-column: 1 / -1; }
+  .modal-footer { display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border); }
+
+  /* SYNC STATUS */
+  .sync-status {
+    display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted);
+  }
+  .sync-dot {
+    width: 8px; height: 8px; border-radius: 50%; background: var(--green);
+    box-shadow: 0 0 8px rgba(34,197,94,0.6);
+  }
+  .sync-dot.syncing { background: var(--yellow); animation: pulse 1s infinite; }
+  .sync-dot.error { background: var(--red); }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+  .toast {
+    position: fixed; bottom: 24px; right: 24px; z-index: 300;
+    background: var(--surface2); border: 1px solid var(--border); border-radius: 10px;
+    padding: 14px 20px; font-size: 14px; display: none; align-items: center; gap: 10px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+    animation: slideIn 0.3s ease;
+  }
+  .toast.show { display: flex; }
+  @keyframes slideIn { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+  .empty-state {
+    text-align: center; padding: 60px 20px; color: var(--muted);
+  }
+  .empty-state h3 { font-family: 'Syne', sans-serif; font-size: 18px; color: var(--text); margin-bottom: 8px; }
+
+  .followup-section { background: var(--surface2); border-radius: 12px; padding: 16px; margin-bottom: 28px; border: 1px solid var(--border); }
+  .followup-section h3 { font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; color: var(--yellow); margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+  .followup-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+  .followup-chip {
+    padding: 6px 14px; background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3);
+    border-radius: 20px; font-size: 12px; cursor: pointer; transition: all 0.15s;
+  }
+  .followup-chip:hover { background: rgba(245,158,11,0.2); }
+  .followup-chip.overdue { background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.3); color: var(--red); }
+
+  #setupView { padding: 20px 32px; }
+  .sheet-connected { display: flex; align-items: center; gap: 10px; padding: 10px 16px; background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.3); border-radius: 8px; font-size: 13px; color: var(--green); }
+
+  .api-help {
+    background: var(--surface2); border-radius: 10px; padding: 16px; margin-top: 16px;
+    font-size: 12px; color: var(--muted); line-height: 1.7;
+  }
+  .api-help a { color: var(--accent); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">CEPL <span>Leads</span></div>
+  <div class="header-actions">
+    <div class="sync-status" id="syncStatus">
+      <div class="sync-dot" id="syncDot"></div>
+      <span id="syncText">Not connected</span>
+    </div>
+    <button class="btn btn-secondary btn-sm" onclick="showSetup()">⚙ Settings</button>
+    <button class="btn btn-primary btn-sm" onclick="openAddModal()">+ Add Lead</button>
+  </div>
+</div>
+
+<!-- SETUP VIEW -->
+<div id="setupView">
+  <div class="setup-panel">
+    <h2>🔗 Connect Google Sheet</h2>
+    <p>This app reads and writes your leads data to a Google Sheet in real-time. Follow the steps below to connect.</p>
+
+    <div class="setup-steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <h4>Open your Google Sheet</h4>
+          <p>Upload your Excel file to Google Drive and open it as a Google Sheet, or create a new one with the same columns.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <h4>Deploy a Google Apps Script API</h4>
+          <p>Go to <strong>Extensions → Apps Script</strong> in your sheet. Paste the Apps Script code below, then click <strong>Deploy → New Deployment → Web App</strong>. Set "Who has access" to <code>Anyone</code>. Copy the Web App URL.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <h4>Paste the Web App URL here</h4>
+          <p>Enter the deployment URL below and click Connect. The app will fetch and sync all your leads automatically.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="input-group">
+      <label>Google Apps Script Web App URL</label>
+      <input type="url" id="sheetUrl" placeholder="https://script.google.com/macros/s/.../exec" value="">
+    </div>
+    <div class="input-group">
+      <label>Sheet Name (tab name)</label>
+      <input type="text" id="sheetName" placeholder="Daily Work" value="Daily Work">
+    </div>
+
+    <div style="display:flex; gap:12px; flex-wrap:wrap;">
+      <button class="btn btn-primary" onclick="connectSheet()">Connect Google Sheet</button>
+      <button class="btn btn-secondary" onclick="loadDemo()">🗂 Load Demo Data (offline)</button>
+    </div>
+
+    <div class="api-help">
+      <strong>Apps Script Code to copy:</strong><br>
+      Open your Google Sheet → Extensions → Apps Script → paste this code:
+      <pre style="margin-top:10px; background:var(--bg); padding:12px; border-radius:8px; overflow-x:auto; white-space:pre-wrap; font-size:11px; color:#a0aec0;">function doGet(e) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName(e.parameter.sheet || 'Daily Work');
+  var data = sheet.getDataRange().getValues();
+  return ContentService.createTextOutput(JSON.stringify(data))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function doPost(e) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var payload = JSON.parse(e.postData.contents);
+  var sheet = ss.getSheetByName(payload.sheet || 'Daily Work');
+  
+  if (payload.action === 'update') {
+    var data = sheet.getDataRange().getValues();
+    for (var i = 1; i &lt; data.length; i++) {
+      if (data[i][0] == payload.row[0]) {
+        sheet.getRange(i+1, 1, 1, payload.row.length).setValues([payload.row]);
+        return ContentService.createTextOutput(JSON.stringify({status:'ok'}))
+          .setMimeType(ContentService.MimeType.JSON);
+      }
+    }
+    // New row
+    sheet.appendRow(payload.row);
+    return ContentService.createTextOutput(JSON.stringify({status:'added'}))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+  
+  if (payload.action === 'delete') {
+    var data = sheet.getDataRange().getValues();
+    for (var i = 1; i &lt; data.length; i++) {
+      if (data[i][0] == payload.id) {
+        sheet.deleteRow(i+1);
+        return ContentService.createTextOutput(JSON.stringify({status:'deleted'}))
+          .setMimeType(ContentService.MimeType.JSON);
+      }
+    }
+  }
+  
+  return ContentService.createTextOutput(JSON.stringify({status:'error'}))
+    .setMimeType(ContentService.MimeType.JSON);
+}</pre>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div class="app" id="appView">
+  <div class="main">
+
+    <!-- STATS -->
+    <div class="stats-row">
+      <div class="stat-card" style="--accent-color: var(--accent)">
+        <div class="stat-label">Total Leads</div>
+        <div class="stat-value" id="statTotal">0</div>
+        <div class="stat-sub">All open leads</div>
+      </div>
+      <div class="stat-card" style="--accent-color: var(--yellow)">
+        <div class="stat-label">In Progress</div>
+        <div class="stat-value" id="statInProgress">0</div>
+        <div class="stat-sub">Active follow-ups</div>
+      </div>
+      <div class="stat-card" style="--accent-color: var(--red)">
+        <div class="stat-label">Overdue</div>
+        <div class="stat-value" id="statOverdue">0</div>
+        <div class="stat-sub">Past follow-up date</div>
+      </div>
+      <div class="stat-card" style="--accent-color: var(--green)">
+        <div class="stat-label">Not Started</div>
+        <div class="stat-value" id="statNotStarted">0</div>
+        <div class="stat-sub">Awaiting action</div>
+      </div>
+    </div>
+
+    <!-- FOLLOW-UP ALERTS -->
+    <div class="followup-section" id="followupSection" style="display:none">
+      <h3>⚠ Follow-ups Due</h3>
+      <div class="followup-chips" id="followupChips"></div>
+    </div>
+
+    <!-- TOOLBAR -->
+    <div class="toolbar">
+      <input type="text" class="search-box" id="searchBox" placeholder="🔍  Search client, contact, task..." oninput="renderTable()">
+      <select class="filter-select" id="filterStage" onchange="renderTable()">
+        <option value="">All Stages</option>
+        <option value="In progress">In Progress</option>
+        <option value="Not started">Not Started</option>
+        <option value="Done">Done</option>
+      </select>
+      <select class="filter-select" id="filterOwner" onchange="renderTable()">
+        <option value="">All Owners</option>
+      </select>
+      <button class="btn btn-secondary btn-sm" onclick="syncFromSheet()">🔄 Refresh</button>
+      <button class="btn btn-success btn-sm" onclick="exportCSV()">⬇ Export CSV</button>
+    </div>
+
+    <!-- TABLE -->
+    <div class="table-wrap">
+      <table id="leadsTable">
+        <thead>
+          <tr>
+            <th onclick="sortBy('id')">Lead ID ↕</th>
+            <th onclick="sortBy('client')">Client ↕</th>
+            <th>Contact</th>
+            <th>Task / Product</th>
+            <th onclick="sortBy('stage')">Stage ↕</th>
+            <th>Status</th>
+            <th onclick="sortBy('updated')">Updated ↕</th>
+            <th onclick="sortBy('followup')">Follow-up ↕</th>
+            <th>Owner</th>
+            <th>Doc#</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="leadsBody">
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="overlay" id="modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modalTitle">Add New Lead</div>
+      <button class="close-btn" onclick="closeModal()">✕</button>
+    </div>
+    <div class="form-grid">
+      <div class="input-group">
+        <label>Lead ID</label>
+        <input type="text" id="fId" placeholder="e.g. CEPL/EQ/2026-27/0010">
+      </div>
+      <div class="input-group">
+        <label>Stage</label>
+        <select id="fStage">
+          <option>In progress</option>
+          <option>Not started</option>
+          <option>Done</option>
+        </select>
+      </div>
+      <div class="input-group form-full">
+        <label>Client Company</label>
+        <input type="text" id="fClient" placeholder="Company name">
+      </div>
+      <div class="input-group">
+        <label>Contact Name</label>
+        <input type="text" id="fContact" placeholder="Contact person">
+      </div>
+      <div class="input-group">
+        <label>Owner / Assigned To</label>
+        <input type="text" id="fOwner" placeholder="e.g. sv kand, mejo sir">
+      </div>
+      <div class="input-group form-full">
+        <label>Task / Product Description</label>
+        <textarea id="fTask" rows="3" placeholder="Describe the task, products, updates..."></textarea>
+      </div>
+      <div class="input-group form-full">
+        <label>Status / Remarks</label>
+        <textarea id="fStatus" rows="2" placeholder="Current status, waiting for response, etc."></textarea>
+      </div>
+      <div class="input-group">
+        <label>Updated On</label>
+        <input type="date" id="fUpdated">
+      </div>
+      <div class="input-group">
+        <label>Next Follow-up On</label>
+        <input type="date" id="fFollowup">
+      </div>
+      <div class="input-group">
+        <label>Remarks</label>
+        <input type="text" id="fRemarks" placeholder="Additional remarks">
+      </div>
+      <div class="input-group">
+        <label>Document #</label>
+        <input type="text" id="fDoc" placeholder="e.g. CEPL/CO/26-27/001">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" id="saveBtn" onclick="saveLead()">Save Lead</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ===== STATE =====
+let leads = [];
+let sheetUrl = '';
+let sheetName = 'Daily Work';
+let editIndex = null;
+let sortCol = '';
+let sortDir = 1;
+let isDemo = false;
+
+const DEMO_LEADS = [
+  { id:'CEPL/EQ/2025-26/0001', client:'Envision Enviro Technologies Pvt. Ltd.', contact:'Pallav Parikh', task:'Commercial offer and data sheet sent - sent on 23 Mar 2026 - awaiting response. Grit Mechanism - detriator type.', stage:'In progress', status:'Waiting for response', updated:'2026-03-23', followup:'2026-04-03', remarks:'sv kand', doc:'CEPL/CO/25-26/149' },
+  { id:'CEPL/EQ/2025-26/0002', client:'Envision Enviro Technologies Pvt. Ltd.', contact:'Pinkal Ghiwala', task:'Clariflocculator (3.0 Mtr Dia MSFRP): Qty 2 Nos. Clarifier (4.0 Mtr Dia MSEP) 1 Nos.', stage:'In progress', status:'Waiting for response', updated:'2026-04-06', followup:'2026-04-03', remarks:'mejo sir', doc:'CEPL/CO/26-27/003' },
+  { id:'CEPL/EQ/2025-26/0003', client:'Vishvaraj Environment Pvt. Ltd.', contact:'Sukeshini Shiwarkar', task:'24-03-26 data sheet and CO sent for clarifier 4 units. 9-4-26 R2 sent.', stage:'In progress', status:'Waiting for response - sent weights and all small queries', updated:'2026-03-24', followup:'2026-04-03', remarks:'S V Kand', doc:'' },
+  { id:'CEPL/EQ/2025-26/0004', client:'Team Engineers Private Limited', contact:'Sanjay', task:'1-04-26 Datasheet and CO sent - clarifier - 1', stage:'In progress', status:'Waiting for response', updated:'2026-04-01', followup:'2026-04-03', remarks:'sv kand', doc:'CEPL/CO/26-27/001' },
+  { id:'CEPL/EQ/2025-26/0005', client:'Clear water (Esol)', contact:'Anisha Salvi', task:'27-03-26 datasheet and CO sent - HRSCC', stage:'In progress', status:'Waiting for response', updated:'2026-03-27', followup:'2026-04-03', remarks:'sv kand', doc:'' },
+  { id:'CEPL/EQ/2025-26/0006', client:'Aarnya Enviro Consultant', contact:'Yuvraj Patel', task:'CETP Equipment: Flash Mixer, Flocculator, Primary & Secondary Clarifier, DAF. CO and datasheet sent CEPL/CO/26-27/004. 13-4-26 DAF and SAF quotation sent.', stage:'In progress', status:'Not given anything. 9-4-26 DAF and ASF MOC awaiting response. 13-4-26 quotation for DAF and SAF sent.', updated:'2026-04-04', followup:'2026-04-07', remarks:'sv kand', doc:'CEPL/CO/26-27/004' },
+  { id:'CEPL/EQ/2025-26/0007', client:'Doshion Environment Water Solutions India Pvt Ltd.', contact:'Parth Pandit', task:'HRSCC and Sludge Thickener. 3-4-26 sent CO and datasheet CEPL/CO/26-27/002.', stage:'In progress', status:'Waiting for response', updated:'2026-04-03', followup:'2026-04-07', remarks:'sv kand', doc:'CEPL/CO/26-27/002' },
+  { id:'CEPL/EQ/2026-27/0001', client:'Larsen & Toubro Construction', contact:'R Santosh', task:'6-4-26 Enquiry for agitators. 11-4-26 sent updated terms & conditions for review.', stage:'In progress', status:'Asked additional info', updated:'2026-04-11', followup:'2026-04-10', remarks:'Mejo sir', doc:'CEPL/CO/25-26/021' },
+  { id:'CEPL/EQ/2026-27/002', client:'Vishvaraj Environment Pvt. Ltd.', contact:'Sukeshini Shiwarkar', task:'Claritube Settler', stage:'Not started', status:'sv kand sir', updated:'2026-04-07', followup:'', remarks:'sv kand', doc:'' },
+  { id:'CEPL/EQ/2026-27/0003', client:'Envision Enviro Technologies Pvt. Ltd.', contact:'Avni Bhavsar', task:'Agitators, Clarifiers, Clariflocculator. CEP/CO/26-27/005 CO and datasheet.', stage:'In progress', status:'mejo sir', updated:'2026-04-10', followup:'', remarks:'', doc:'CEP/CO/26-27/005' },
+  { id:'CEPL/EQ/2025-25/114', client:'KEC - Satna', contact:'Sambit Panda', task:'Already sent project. Resending same offer by approving their terms and changed some terms on our side.', stage:'In progress', status:'Previous year lead', updated:'2026-04-09', followup:'2026-04-09', remarks:'', doc:'CEP/CO/25-26/114' },
+  { id:'CEPL/EQ/2026-27/0004', client:'PPCL', contact:'Aarti Basu', task:'Neutralizer Tank Mixer x2, CTT Tank Mixer, Flash Mixer, Flocculator Mixer, Reactivator Clarifier Mechanism.', stage:'Not started', status:'Email sent for more info 13-4-26', updated:'2026-04-10', followup:'', remarks:'', doc:'' },
+  { id:'CEPL/EQ/2026-27/0005', client:'Rochem', contact:'Vilasini, VCGT', task:'Agitator-19, Clarifier-2. 15-04-26 CEPL/CO/26-27/006.', stage:'In progress', status:'mejo sir', updated:'2026-04-15', followup:'', remarks:'', doc:'' },
+  { id:'CEPL/EQ/2026-27/0006', client:'Enmentt Projects and Consulting', contact:'Apoorva Ghantiwala', task:'Agitator - CEPL-26-27-009.', stage:'In progress', status:'mejo sir', updated:'2026-04-17', followup:'', remarks:'', doc:'' },
+  { id:'CEPL/EQ/2026-27/0008', client:'Aranya', contact:'Ronak', task:'Agitators, Clarifier - CEPL/CO/26-27/10.', stage:'In progress', status:'', updated:'2026-04-17', followup:'', remarks:'', doc:'' },
+];
+
+// ===== INIT =====
+window.onload = () => {
+  sheetUrl = localStorage.getItem('cepl_sheet_url') || '';
+  sheetName = localStorage.getItem('cepl_sheet_name') || 'Daily Work';
+  if (sheetUrl) {
+    document.getElementById('sheetUrl').value = sheetUrl;
+    document.getElementById('sheetName').value = sheetName;
+    connectSheet();
+  }
+};
+
+// ===== GOOGLE SHEET =====
+async function connectSheet() {
+  const url = document.getElementById('sheetUrl').value.trim();
+  const name = document.getElementById('sheetName').value.trim() || 'Daily Work';
+  if (!url) { toast('Enter the Web App URL first', 'error'); return; }
+  sheetUrl = url; sheetName = name;
+  setSyncStatus('syncing', 'Connecting...');
+  try {
+    const res = await fetch(`${sheetUrl}?sheet=${encodeURIComponent(sheetName)}`);
+    const raw = await res.json();
+    parseSheetData(raw);
+    localStorage.setItem('cepl_sheet_url', sheetUrl);
+    localStorage.setItem('cepl_sheet_name', sheetName);
+    setSyncStatus('ok', 'Synced with Google Sheet');
+    showApp();
+    toast('✅ Connected to Google Sheet!');
+    isDemo = false;
+  } catch (e) {
+    setSyncStatus('error', 'Connection failed');
+    toast('❌ Could not connect. Check URL and CORS settings.', 'error');
+  }
+}
+
+function parseSheetData(raw) {
+  if (!raw || raw.length < 2) return;
+  const headers = raw[0];
+  leads = [];
+  for (let i = 1; i < raw.length; i++) {
+    const r = raw[i];
+    if (!r[1] && !r[0]) continue;
+    leads.push({
+      id: clean(r[0]),
+      client: clean(r[1]),
+      contact: clean(r[2]),
+      task: clean(r[3]),
+      owner: clean(r[4]),
+      stage: clean(r[5]) || 'Not started',
+      status: clean(r[6]),
+      updated: formatDate(r[7]),
+      followup: formatDate(r[8]),
+      remarks: clean(r[9]),
+      doc: clean(r[10]),
+      _rowIdx: i,
+    });
+  }
+  refreshOwnerFilter();
+  renderTable();
+  renderStats();
+  renderFollowups();
+}
+
+function clean(v) {
+  if (v === null || v === undefined) return '';
+  return String(v).replace(/\\n/g, ' ').trim();
+}
+
+function formatDate(v) {
+  if (!v) return '';
+  if (typeof v === 'string' && v.match(/^\d{4}-\d{2}-\d{2}/)) return v.substring(0, 10);
+  try { const d = new Date(v); return isNaN(d) ? '' : d.toISOString().substring(0, 10); }
+  catch { return ''; }
+}
+
+async function syncFromSheet() {
+  if (isDemo) { toast('Running in demo mode – no sheet connected.'); return; }
+  setSyncStatus('syncing', 'Refreshing...');
+  try {
+    const res = await fetch(`${sheetUrl}?sheet=${encodeURIComponent(sheetName)}&t=${Date.now()}`);
+    const raw = await res.json();
+    parseSheetData(raw);
+    setSyncStatus('ok', 'Synced ' + new Date().toLocaleTimeString());
+    toast('✅ Refreshed from Google Sheet');
+  } catch { setSyncStatus('error', 'Refresh failed'); toast('❌ Refresh failed', 'error'); }
+}
+
+async function writeToSheet(lead) {
+  if (isDemo) { toast('Demo mode – changes saved locally only.'); return true; }
+  const row = [lead.id, lead.client, lead.contact, lead.task, lead.owner || '', lead.stage, lead.status, lead.updated, lead.followup, lead.remarks, lead.doc];
+  setSyncStatus('syncing', 'Saving...');
+  try {
+    await fetch(sheetUrl, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'update', sheet: sheetName, row }),
+    });
+    setSyncStatus('ok', 'Saved ' + new Date().toLocaleTimeString());
+    return true;
+  } catch {
+    setSyncStatus('error', 'Save failed');
+    toast('❌ Could not save to Google Sheet', 'error');
+    return false;
+  }
+}
+
+async function deleteFromSheet(id) {
+  if (isDemo) return true;
+  try {
+    await fetch(sheetUrl, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'delete', sheet: sheetName, id }),
+    });
+    return true;
+  } catch { return false; }
+}
+
+// ===== DEMO =====
+function loadDemo() {
+  leads = DEMO_LEADS.map((l,i) => ({...l, _rowIdx: i+1}));
+  isDemo = true;
+  setSyncStatus('ok', 'Demo mode (offline)');
+  showApp();
+  refreshOwnerFilter();
+  renderTable();
+  renderStats();
+  renderFollowups();
+  toast('📊 Demo data loaded! Connect a Google Sheet to sync.');
+}
+
+// ===== UI HELPERS =====
+function showApp() {
+  document.getElementById('setupView').style.display = 'none';
+  document.getElementById('appView').classList.add('visible');
+}
+function showSetup() {
+  document.getElementById('setupView').style.display = 'block';
+  document.getElementById('appView').classList.remove('visible');
+}
+function setSyncStatus(state, msg) {
+  const dot = document.getElementById('syncDot');
+  dot.className = 'sync-dot' + (state === 'syncing' ? ' syncing' : state === 'error' ? ' error' : '');
+  document.getElementById('syncText').textContent = msg;
+}
+function toast(msg, type='ok') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.borderColor = type === 'error' ? 'var(--red)' : 'var(--green)';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ===== STATS =====
+function renderStats() {
+  document.getElementById('statTotal').textContent = leads.length;
+  document.getElementById('statInProgress').textContent = leads.filter(l => l.stage === 'In progress').length;
+  document.getElementById('statNotStarted').textContent = leads.filter(l => l.stage === 'Not started').length;
+  const today = new Date().toISOString().substring(0, 10);
+  document.getElementById('statOverdue').textContent = leads.filter(l => l.followup && l.followup < today).length;
+}
+
+function renderFollowups() {
+  const today = new Date().toISOString().substring(0, 10);
+  const due = leads.filter(l => l.followup && l.followup <= today);
+  const sec = document.getElementById('followupSection');
+  if (!due.length) { sec.style.display = 'none'; return; }
+  sec.style.display = 'block';
+  const chips = document.getElementById('followupChips');
+  chips.innerHTML = due.map(l => `
+    <div class="followup-chip ${l.followup < today ? 'overdue' : ''}" onclick="highlightLead('${l.id}')">
+      ${l.client.substring(0, 22)} – <strong>${l.followup}</strong>
+    </div>`).join('');
+}
+
+// ===== TABLE =====
+function renderTable() {
+  const q = document.getElementById('searchBox').value.toLowerCase();
+  const stage = document.getElementById('filterStage').value;
+  const owner = document.getElementById('filterOwner').value;
+
+  let filtered = leads.filter(l => {
+    if (stage && l.stage !== stage) return false;
+    if (owner && l.remarks !== owner && l.owner !== owner) return false;
+    if (q && !( (l.id+l.client+l.contact+l.task+l.status+l.doc).toLowerCase().includes(q) )) return false;
+    return true;
+  });
+
+  if (sortCol) {
+    filtered.sort((a, b) => {
+      let va = a[sortCol] || '', vb = b[sortCol] || '';
+      return va < vb ? -sortDir : va > vb ? sortDir : 0;
+    });
+  }
+
+  const today = new Date().toISOString().substring(0, 10);
+  const tbody = document.getElementById('leadsBody');
+  if (!filtered.length) {
+    tbody.innerHTML = `<tr><td colspan="11"><div class="empty-state"><h3>No leads found</h3><p>Try adjusting your filters.</p></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = filtered.map((l, i) => {
+    const stageBadge = l.stage === 'In progress' ? 'badge-in-progress' : l.stage === 'Not started' ? 'badge-not-started' : 'badge-done';
+    let fupClass = '';
+    if (l.followup) fupClass = l.followup < today ? 'overdue' : l.followup === today ? 'today' : 'upcoming';
+    return `<tr id="row-${l.id.replace(/\//g,'_')}">
+      <td><div class="lead-id">${l.id || '—'}</div></td>
+      <td><div class="client-name">${l.client || '—'}</div></td>
+      <td><div class="contact-name">${l.contact || '—'}</div></td>
+      <td><div class="task-text">${l.task || '—'}</div></td>
+      <td><span class="badge ${stageBadge}">${l.stage || 'Unknown'}</span></td>
+      <td><div class="task-text">${l.status || '—'}</div></td>
+      <td style="white-space:nowrap;font-size:12px">${l.updated || '—'}</td>
+      <td style="white-space:nowrap;font-size:12px" class="${fupClass}">${l.followup || '—'}</td>
+      <td style="font-size:12px">${l.remarks || l.owner || '—'}</td>
+      <td style="font-size:11px;font-family:'DM Mono',monospace">${l.doc || '—'}</td>
+      <td>
+        <div class="row-actions">
+          <button class="btn btn-secondary btn-sm" onclick="editLead(${leads.indexOf(l)})">✏ Edit</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function refreshOwnerFilter() {
+  const owners = [...new Set(leads.map(l => l.remarks || l.owner).filter(Boolean))].sort();
+  const sel = document.getElementById('filterOwner');
+  sel.innerHTML = '<option value="">All Owners</option>' + owners.map(o => `<option value="${o}">${o}</option>`).join('');
+}
+
+function highlightLead(id) {
+  const rowId = 'row-' + id.replace(/\//g,'_');
+  const el = document.getElementById(rowId);
+  if (el) { el.scrollIntoView({behavior:'smooth', block:'center'}); el.style.outline = '2px solid var(--yellow)'; setTimeout(() => el.style.outline = '', 2000); }
+}
+
+function sortBy(col) {
+  if (sortCol === col) sortDir = -sortDir;
+  else { sortCol = col; sortDir = 1; }
+  renderTable();
+}
+
+// ===== MODAL =====
+function openAddModal() {
+  editIndex = null;
+  document.getElementById('modalTitle').textContent = 'Add New Lead';
+  document.getElementById('saveBtn').textContent = 'Add Lead';
+  clearForm();
+  document.getElementById('fUpdated').value = new Date().toISOString().substring(0, 10);
+  document.getElementById('modal').classList.add('open');
+}
+
+function editLead(i) {
+  editIndex = i;
+  const l = leads[i];
+  document.getElementById('modalTitle').textContent = 'Edit Lead';
+  document.getElementById('saveBtn').textContent = 'Save Changes';
+  document.getElementById('fId').value = l.id || '';
+  document.getElementById('fClient').value = l.client || '';
+  document.getElementById('fContact').value = l.contact || '';
+  document.getElementById('fTask').value = l.task || '';
+  document.getElementById('fOwner').value = l.owner || l.remarks || '';
+  document.getElementById('fStage').value = l.stage || 'Not started';
+  document.getElementById('fStatus').value = l.status || '';
+  document.getElementById('fUpdated').value = l.updated || '';
+  document.getElementById('fFollowup').value = l.followup || '';
+  document.getElementById('fRemarks').value = l.remarks || '';
+  document.getElementById('fDoc').value = l.doc || '';
+  document.getElementById('modal').classList.add('open');
+}
+
+async function saveLead() {
+  const lead = {
+    id: document.getElementById('fId').value.trim(),
+    client: document.getElementById('fClient').value.trim(),
+    contact: document.getElementById('fContact').value.trim(),
+    task: document.getElementById('fTask').value.trim(),
+    owner: document.getElementById('fOwner').value.trim(),
+    stage: document.getElementById('fStage').value,
+    status: document.getElementById('fStatus').value.trim(),
+    updated: document.getElementById('fUpdated').value,
+    followup: document.getElementById('fFollowup').value,
+    remarks: document.getElementById('fRemarks').value.trim(),
+    doc: document.getElementById('fDoc').value.trim(),
+  };
+  if (!lead.client) { toast('Client name is required', 'error'); return; }
+
+  const btn = document.getElementById('saveBtn');
+  btn.disabled = true; btn.textContent = 'Saving...';
+
+  const ok = await writeToSheet(lead);
+  if (ok || isDemo) {
+    if (editIndex !== null) {
+      leads[editIndex] = { ...leads[editIndex], ...lead };
+    } else {
+      leads.push({ ...lead, _rowIdx: leads.length + 2 });
+    }
+    refreshOwnerFilter();
+    renderTable();
+    renderStats();
+    renderFollowups();
+    closeModal();
+    toast(editIndex !== null ? '✅ Lead updated!' : '✅ Lead added!');
+  }
+  btn.disabled = false;
+  btn.textContent = editIndex !== null ? 'Save Changes' : 'Add Lead';
+}
+
+
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+  editIndex = null;
+}
+function clearForm() {
+  ['fId','fClient','fContact','fTask','fOwner','fStatus','fUpdated','fFollowup','fRemarks','fDoc'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('fStage').value = 'Not started';
+}
+
+// ===== EXPORT =====
+function exportCSV() {
+  const cols = ['ID','Client','Contact','Task','Stage','Status','Updated','FollowUp','Owner','Doc'];
+  const rows = leads.map(l => [l.id,l.client,l.contact,l.task,l.stage,l.status,l.updated,l.followup,l.remarks||l.owner,l.doc].map(v=>`"${(v||'').replace(/"/g,'""')}"`).join(','));
+  const csv = [cols.join(','), ...rows].join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = 'CEPL_Leads_' + new Date().toISOString().substring(0,10) + '.csv';
+  a.click();
+  toast('⬇ CSV exported!');
+}
+</script>
+</body>
+</html>

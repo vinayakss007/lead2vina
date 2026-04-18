@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CEPL Leads — Login</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0d0f14; color: #e8eaf0;
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+  }
+  .card {
+    background: #161a22; border: 1px solid #2a3042; border-radius: 20px;
+    padding: 48px 40px; width: 100%; max-width: 380px;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+  }
+  .logo {
+    font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 800;
+    margin-bottom: 6px; letter-spacing: -0.5px;
+  }
+  .logo span { color: #4f9eff; }
+  .subtitle { color: #8892a4; font-size: 13px; margin-bottom: 36px; }
+  label { display: block; font-size: 12px; color: #8892a4; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px; font-weight: 500; }
+  input[type=password] {
+    width: 100%; padding: 13px 16px;
+    background: #1e2330; border: 1px solid #2a3042; border-radius: 10px;
+    color: #e8eaf0; font-family: 'DM Sans', sans-serif; font-size: 15px;
+    transition: border-color 0.2s; letter-spacing: 3px;
+  }
+  input[type=password]:focus { outline: none; border-color: #4f9eff; }
+  input[type=password]::placeholder { letter-spacing: 0; color: #4a5568; }
+  button {
+    width: 100%; margin-top: 20px; padding: 14px;
+    background: #4f9eff; color: #fff; border: none; border-radius: 10px;
+    font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700;
+    cursor: pointer; transition: all 0.15s; letter-spacing: 0.3px;
+  }
+  button:hover { background: #3b8ef5; transform: translateY(-1px); }
+  button:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+  .error {
+    margin-top: 14px; padding: 10px 14px;
+    background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3);
+    border-radius: 8px; color: #ef4444; font-size: 13px; display: none;
+  }
+  .lock { font-size: 36px; margin-bottom: 20px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="lock">🔒</div>
+  <div class="logo">CEPL <span>Leads</span></div>
+  <div class="subtitle">Enter password to access the dashboard</div>
+  <label>Password</label>
+  <input type="password" id="pw" placeholder="Enter password" onkeydown="if(event.key==='Enter') login()">
+  <button id="btn" onclick="login()">Enter Dashboard →</button>
+  <div class="error" id="err">Incorrect password. Please try again.</div>
+</div>
+<script>
+  async function login() {
+    const pw = document.getElementById('pw').value;
+    const btn = document.getElementById('btn');
+    const err = document.getElementById('err');
+    if (!pw) return;
+    btn.disabled = true; btn.textContent = 'Checking...';
+    err.style.display = 'none';
+    const res = await fetch('/api/auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: pw })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      btn.textContent = '✓ Welcome!';
+      const params = new URLSearchParams(window.location.search);
+      window.location.href = params.get('from') || '/';
+    } else {
+      err.style.display = 'block';
+      btn.disabled = false; btn.textContent = 'Enter Dashboard →';
+      document.getElementById('pw').value = '';
+      document.getElementById('pw').focus();
+    }
+  }
+  document.getElementById('pw').focus();
+</script>
+</body>
+</html>
