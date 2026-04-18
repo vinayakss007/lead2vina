@@ -59,26 +59,23 @@
   <div class="error" id="err">Incorrect password. Please try again.</div>
 </div>
 <script>
+  const HARDCODED_PW = 'cepl2026'; // change this to your password
+
   async function login() {
     const pw = document.getElementById('pw').value;
     const btn = document.getElementById('btn');
     const err = document.getElementById('err');
     if (!pw) return;
-    btn.disabled = true; btn.textContent = 'Checking...';
-    err.style.display = 'none';
-    const res = await fetch('/api/auth', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password: pw })
-    });
-    const data = await res.json();
-    if (data.ok) {
+
+    if (pw === HARDCODED_PW) {
+      // Set cookie directly - no API needed
+      document.cookie = 'cepl_auth=ok; path=/; max-age=' + (60 * 60 * 24 * 7);
       btn.textContent = '✓ Welcome!';
-      const params = new URLSearchParams(window.location.search);
-      window.location.href = params.get('from') || '/';
+      setTimeout(() => { window.location.href = '/'; }, 300);
     } else {
       err.style.display = 'block';
-      btn.disabled = false; btn.textContent = 'Enter Dashboard →';
+      btn.disabled = false;
+      btn.textContent = 'Enter Dashboard →';
       document.getElementById('pw').value = '';
       document.getElementById('pw').focus();
     }

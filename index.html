@@ -6,9 +6,8 @@
 <title>CEPL Leads Dashboard</title>
 <script>
 (function(){
-  function getCookie(n){return(document.cookie.split(';').find(c=>c.trim().startsWith(n+'='))||'').split('=')[1]||'';}
-  if(!getCookie('cepl_auth')){
-    window.location.replace('/login?from='+encodeURIComponent(window.location.pathname));
+  if(document.cookie.indexOf('cepl_auth=ok') === -1){
+    window.location.replace('/login');
   }
 })();
 </script>
