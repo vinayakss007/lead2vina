@@ -4,14 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CEPL Leads Dashboard</title>
-<style>body{display:none}</style>
 <script>
 (function(){
   function getCookie(n){return(document.cookie.split(';').find(c=>c.trim().startsWith(n+'='))||'').split('=')[1]||'';}
   if(!getCookie('cepl_auth')){
     window.location.replace('/login?from='+encodeURIComponent(window.location.pathname));
-  } else {
-    document.addEventListener('DOMContentLoaded',function(){ document.body.style.display=''; });
   }
 })();
 </script>
