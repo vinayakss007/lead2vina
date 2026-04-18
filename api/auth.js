@@ -1,5 +1,5 @@
 export default function handler(req, res) {
-  const PASSWORD = process.env.SITE_PASSWORD || 'cepl2026';
+  const PASSWORD = process.env.SITE_PASSWORD || 'vinayak@123';
   const COOKIE_NAME = 'cepl_auth';
 
   if (req.method === 'POST') {
