@@ -1,0 +1,32 @@
+services:
+  frontend:
+    # NOTE: This service serves static files. A Dockerfile is required in the root
+    # directory to copy 'index.html' and 'login.html' into a web server image (e.g., Nginx).
+    # Example Dockerfile content:
+    # FROM nginx:alpine
+    # COPY index.html /usr/share/nginx/html/
+    # COPY login.html /usr/share/nginx/html/
+    build:
+      context: .
+    ports:
+      - mode: ingress
+        target: 80
+        published: 80
+  api:
+    # NOTE: The 'api/auth.js' file appears to be a serverless function.
+    # To deploy it as a long-running service with Defang, it needs to be wrapped
+    # in an HTTP server (e.g., Express.js) that listens on a port.
+    # You would need to:
+    # 1. Create a 'server.js' in the 'api' directory that imports 'auth.js'
+    #    and sets up an HTTP endpoint (e.g., using Express).
+    # 2. Create a Dockerfile in the 'api' directory that installs Node.js
+    #    dependencies and runs 'server.js'.
+    build:
+      context: ./api
+    ports:
+      - mode: ingress
+        target: 3000 # Placeholder port, adjust based on actual server implementation
+        published: 3000
+    environment:
+      # Add any environment variables required by auth.js here
+      - NODE_ENV=production
